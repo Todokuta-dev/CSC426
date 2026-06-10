@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AuthApp — Login</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0d0d2b 0%, #1a0533 45%, #0d1f3c 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      overflow: hidden;
+    }
+
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(70px);
+      opacity: 0.3;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .orb1 { width: 400px; height: 400px; background: #5533ff; top: -100px; left: -100px; animation: drift1 9s ease-in-out infinite; }
+    .orb2 { width: 300px; height: 300px; background: #cc00ff; bottom: -80px; right: -60px; animation: drift2 11s ease-in-out infinite; }
+    .orb3 { width: 200px; height: 200px; background: #0088ff; top: 50%; left: 55%; animation: drift3 7s ease-in-out infinite; }
+
+    @keyframes drift1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(40px,30px)} }
+    @keyframes drift2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-30px,-40px)} }
+    @keyframes drift3 { 0%,100%{transform:translate(-50%,-50%)} 50%{transform:translate(-40%,-60%)} }
+
+    .card {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      max-width: 420px;
+      margin: 1rem;
+      background: rgba(255,255,255,0.07);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border-radius: 28px;
+      border: 1px solid rgba(255,255,255,0.13);
+      padding: 40px 36px 36px;
+      box-shadow: 0 12px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+      animation: fadeUp 0.5s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+    .logo-dot {
+      width: 10px; height: 10px;
+      background: #8844ff;
+      border-radius: 50%;
+      box-shadow: 0 0 10px #8844ff, 0 0 20px rgba(136,68,255,0.5);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+    .logo-text {
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(180,150,255,0.6);
+      letter-spacing: 4px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      font-size: 26px;
+      font-weight: 600;
+      color: #f0eeff;
+      margin-bottom: 6px;
+    }
+    .subtitle {
+      font-size: 14px;
+      color: rgba(180,160,220,0.55);
+      margin-bottom: 28px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 28px;
+      background: rgba(0,0,0,0.25);
+      border-radius: 12px;
+      padding: 4px;
+    }
+    .tab {
+      flex: 1;
+      padding: 9px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 500;
+      color: rgba(180,160,220,0.5);
+      border-radius: 9px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      background: transparent;
+    }
+    .tab.active {
+      background: rgba(100,60,220,0.4);
+      color: #d0b8ff;
+      box-shadow: 0 2px 12px rgba(100,40,255,0.25);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: rgba(180,155,230,0.6);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-bottom: 7px;
+    }
+    input {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      font-size: 15px;
+      color: #f0eeff;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      font-family: inherit;
+    }
+    input::placeholder { color: rgba(180,160,220,0.3); }
+    input:focus {
+      border-color: rgba(136,68,255,0.6);
+      box-shadow: 0 0 0 3px rgba(100,40,255,0.12);
+    }
+    input.error { border-color: rgba(255,80,120,0.6); }
+
+    .pw-wrap { position: relative; }
+    .pw-toggle {
+      position: absolute;
+      right: 14px; top: 50%;
+      transform: translateY(-50%);
+      background: none; border: none;
+      color: rgba(180,160,220,0.4);
+      cursor: pointer;
+      font-size: 18px;
+      padding: 0;
+      line-height: 1;
+      transition: color 0.2s;
+    }
+    .pw-toggle:hover { color: rgba(180,160,220,0.8); }
+
+    .msg {
+      font-size: 13px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      margin-bottom: 16px;
+      display: none;
+      animation: msgIn 0.2s ease;
+    }
+    @keyframes msgIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+    .msg.error { background: rgba(255,60,100,0.12); border: 1px solid rgba(255,80,120,0.2); color: #ff80a0; display: block; }
+    .msg.success { background: rgba(40,200,120,0.1); border: 1px solid rgba(60,220,140,0.2); color: #60e0a0; display: block; }
+
+    .btn-submit {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, #5533cc, #8833ff);
+      color: #fff;
+      border: none;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.3px;
+      box-shadow: 0 4px 24px rgba(100,40,255,0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+      margin-top: 4px;
+      font-family: inherit;
+    }
+    .btn-submit:hover { box-shadow: 0 6px 32px rgba(120,60,255,0.55); transform: translateY(-1px); }
+    .btn-submit:active { transform: scale(0.97); }
+    .btn-submit:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+    .btn-reset {
+      width: 100%;
+      padding: 11px;
+      background: transparent;
+      color: rgba(180,155,230,0.5);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      font-size: 14px;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .btn-reset:hover { background: rgba(255,255,255,0.05); color: rgba(200,180,240,0.7); }
+
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+
+  <div class="card">
+    <div class="logo">
+      <div class="logo-dot"></div>
+      <span class="logo-text">AuthApp</span>
+    </div>
+
+    <h1 id="card-title">Welcome back</h1>
+    <p class="subtitle" id="card-sub">Sign in to your account to continue.</p>
+
+    <div class="tabs">
+      <button class="tab active" id="tab-login" onclick="switchTab('login')">Log in</button>
+      <button class="tab" id="tab-signup" onclick="switchTab('signup')">Sign up</button>
+    </div>
+
+    <div id="msg" class="msg"></div>
+
+    <div id="form-login">
+      <div class="form-group">
+        <label>Username or Email</label>
+        <input type="text" id="login-identifier" placeholder="Enter username or email" autocomplete="username" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="login-password" placeholder="Enter your password" autocomplete="current-password" />
+          <button class="pw-toggle" onclick="togglePw('login-password', this)">👁</button>
+        </div>
+      </div>
+      <button class="btn-submit" id="btn-login" onclick="doLogin()">Log in</button>
+      <button class="btn-reset" onclick="resetForm()">Reset</button>
+    </div>
+
+    <div id="form-signup" class="hidden">
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="signup-username" placeholder="Choose a username" autocomplete="username" />
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="signup-email" placeholder="your@email.com" autocomplete="email" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="signup-password" placeholder="Min. 6 characters" autocomplete="new-password" />
+          <button class="pw-toggle" onclick="togglePw('signup-password', this)">👁</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Confirm Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="signup-confirm" placeholder="Repeat your password" autocomplete="new-password" />
+          <button class="pw-toggle" onclick="togglePw('signup-confirm', this)">👁</button>
+        </div>
+      </div>
+      <button class="btn-submit" id="btn-signup" onclick="doSignup()">Create account</button>
+      <button class="btn-reset" onclick="resetForm()">Reset</button>
+    </div>
+  </div>
+
+<script>
+  function switchTab(tab) {
+    resetForm();
+    const isLogin = tab === 'login';
+    document.getElementById('form-login').classList.toggle('hidden', !isLogin);
+    document.getElementById('form-signup').classList.toggle('hidden', isLogin);
+    document.getElementById('tab-login').classList.toggle('active', isLogin);
+    document.getElementById('tab-signup').classList.toggle('active', !isLogin);
+    document.getElementById('card-title').textContent = isLogin ? 'Welcome back' : 'Create account';
+    document.getElementById('card-sub').textContent = isLogin
+      ? 'Sign in to your account to continue.'
+      : 'Fill in the details below to get started.';
+  }
+
+  function showMsg(text, type) {
+    const el = document.getElementById('msg');
+    el.textContent = text;
+    el.className = 'msg ' + type;
+  }
+
+  function clearMsg() {
+    const el = document.getElementById('msg');
+    el.className = 'msg';
+    el.textContent = '';
+  }
+
+  function resetForm() {
+    clearMsg();
+    document.querySelectorAll('input').forEach(i => { i.value = ''; i.classList.remove('error'); });
+  }
+
+  function togglePw(id, btn) {
+    const inp = document.getElementById(id);
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+    btn.textContent = inp.type === 'password' ? '👁' : '🙈';
+  }
+
+  function setLoading(btnId, loading) {
+    const btn = document.getElementById(btnId);
+    btn.disabled = loading;
+    if (loading) {
+      btn.dataset.orig = btn.textContent;
+      btn.innerHTML = '<span class="spinner"></span> Please wait…';
+    } else {
+      btn.innerHTML = btn.dataset.orig || btn.innerHTML;
+    }
+  }
+
+  async function doLogin() {
+    clearMsg();
+    const identifier = document.getElementById('login-identifier').value.trim();
+    const password = document.getElementById('login-password').value;
+
+    if (!identifier) { showMsg('Please enter your username or email.', 'error'); document.getElementById('login-identifier').classList.add('error'); return; }
+    if (!password) { showMsg('Please enter your password.', 'error'); document.getElementById('login-password').classList.add('error'); return; }
+
+    setLoading('btn-login', true);
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier, password })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showMsg('Login successful! Redirecting…', 'success');
+        setTimeout(() => window.location.href = '/dashboard', 1000);
+      } else {
+        showMsg(data.message, 'error');
+        document.getElementById('login-password').classList.add('error');
+      }
+    } catch {
+      showMsg('Network error. Please try again.', 'error');
+    } finally {
+      setLoading('btn-login', false);
+    }
+  }
+
+  async function doSignup() {
+    clearMsg();
+    document.querySelectorAll('input').forEach(i => i.classList.remove('error'));
+
+    const username = document.getElementById('signup-username').value.trim();
+    const email = document.getElementById('signup-email').value.trim();
+    const password = document.getElementById('signup-password').value;
+    const confirm = document.getElementById('signup-confirm').value;
+
+    if (!username) { showMsg('Username is required.', 'error'); document.getElementById('signup-username').classList.add('error'); return; }
+    if (username.length < 3) { showMsg('Username must be at least 3 characters.', 'error'); document.getElementById('signup-username').classList.add('error'); return; }
+    if (!email || !email.includes('@')) { showMsg('Enter a valid email address.', 'error'); document.getElementById('signup-email').classList.add('error'); return; }
+    if (!password || password.length < 6) { showMsg('Password must be at least 6 characters.', 'error'); document.getElementById('signup-password').classList.add('error'); return; }
+    if (password !== confirm) { showMsg('Passwords do not match.', 'error'); document.getElementById('signup-confirm').classList.add('error'); return; }
+
+    setLoading('btn-signup', true);
+    try {
+      const res = await fetch('/api/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, email, password })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showMsg(data.message, 'success');
+        setTimeout(() => switchTab('login'), 1800);
+      } else {
+        showMsg(data.message, 'error');
+      }
+    } catch {
+      showMsg('Network error. Please try again.', 'error');
+    } finally {
+      setLoading('btn-signup', false);
+    }
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    const loginHidden = document.getElementById('form-login').classList.contains('hidden');
+    if (!loginHidden) doLogin(); else doSignup();
+  });
+</script>
+</body>
+</html>
