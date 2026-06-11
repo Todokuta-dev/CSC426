@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Calculator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0d0d2b 0%, #1a0533 45%, #0d1f3c 100%);
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      overflow: hidden;
+    }
+
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(70px);
+      opacity: 0.32;
+      pointer-events: none;
+    }
+    .orb1 { width: 420px; height: 420px; background: #5533ff; top: -120px; left: -100px; animation: drift1 9s ease-in-out infinite; }
+    .orb2 { width: 320px; height: 320px; background: #cc00ff; bottom: -80px; right: -60px; animation: drift2 11s ease-in-out infinite; }
+    .orb3 { width: 220px; height: 220px; background: #0088ff; top: 50%; left: 55%; animation: drift3 7s ease-in-out infinite; }
+
+    @keyframes drift1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(40px,30px)} }
+    @keyframes drift2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-30px,-40px)} }
+    @keyframes drift3 { 0%,100%{transform:translate(-50%,-50%)} 50%{transform:translate(-40%,-60%)} }
+
+    .calc {
+      position: relative;
+      z-index: 2;
+      width: 320px;
+      background: rgba(255,255,255,0.07);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border-radius: 28px;
+      border: 1px solid rgba(255,255,255,0.13);
+      padding: 24px 20px 20px;
+      box-shadow: 0 12px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+      animation: fadeUp 0.5s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .header-row {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px; padding: 0 2px;
+    }
+    .calc-name {
+      font-size: 10px;
+      color: rgba(160,130,255,0.45);
+      letter-spacing: 4px;
+      text-transform: uppercase;
+    }
+    .glow-dot {
+      width: 7px; height: 7px;
+      background: #8844ff;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #8844ff, 0 0 18px rgba(136,68,255,0.5);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.45;transform:scale(0.78)} }
+
+    .display-wrap {
+      background: rgba(0,0,0,0.35);
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.07);
+      padding: 16px 18px 14px;
+      margin-bottom: 20px;
+      min-height: 96px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
+    }
+
+    .display-expr {
+      font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+      font-size: 13px;
+      color: rgba(180,140,255,0.55);
+      text-align: right;
+      min-height: 18px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      letter-spacing: 0.5px;
+    }
+
+    .display-main {
+      font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+      font-size: 42px;
+      font-weight: 200;
+      color: #f0eeff;
+      text-align: right;
+      letter-spacing: -1px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-shadow: 0 0 22px rgba(140,100,255,0.4);
+      transition: transform 0.08s ease;
+    }
+    .display-main.pop { transform: scale(1.04); }
+    .display-main.med { font-size: 30px; }
+    .display-main.small { font-size: 22px; }
+
+    .btn-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .btn {
+      height: 58px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      cursor: pointer;
+      font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+      font-size: 16px;
+      font-weight: 400;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 100ms ease, box-shadow 100ms ease, background 100ms ease;
+      user-select: none;
+      outline: none;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn:active { transform: scale(0.91); }
+
+    .btn-num {
+      background: rgba(255,255,255,0.06);
+      color: rgba(240,235,255,0.9);
+    }
+    .btn-num:hover { background: rgba(255,255,255,0.11); box-shadow: 0 0 14px rgba(120,80,255,0.15); }
+
+    .btn-op {
+      background: rgba(100,60,220,0.2);
+      color: #b090ff;
+      border-color: rgba(140,90,255,0.2);
+      font-size: 20px;
+    }
+    .btn-op:hover { background: rgba(100,60,220,0.35); box-shadow: 0 0 16px rgba(120,60,255,0.25); }
+
+    .btn-eq {
+      background: linear-gradient(135deg, #5533cc, #8833ff);
+      color: #fff;
+      border: none;
+      font-size: 22px;
+      box-shadow: 0 4px 20px rgba(100,40,255,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+    }
+    .btn-eq:hover { box-shadow: 0 4px 30px rgba(120,60,255,0.6); }
+
+    .btn-clear {
+      background: rgba(220,50,120,0.15);
+      color: #ff80c0;
+      border-color: rgba(255,80,150,0.18);
+      font-size: 13px;
+      letter-spacing: 0.5px;
+    }
+    .btn-clear:hover { background: rgba(220,50,120,0.28); box-shadow: 0 0 16px rgba(220,50,150,0.25); }
+
+    .btn-fn {
+      background: rgba(40,40,100,0.4);
+      color: rgba(160,140,220,0.8);
+      border-color: rgba(100,80,200,0.15);
+      font-size: 13px;
+    }
+    .btn-fn:hover { background: rgba(60,50,140,0.5); }
+
+    .btn-zero { grid-column: span 2; }
+    .btn-intdiv { grid-column: span 3; font-size: 12px; }
+
+    .btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0);
+      transition: background 100ms;
+      border-radius: inherit;
+    }
+    .btn:active::after { background: rgba(255,255,255,0.09); }
+
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.14);
+      transform: scale(0);
+      animation: ripple-out 0.42s ease-out forwards;
+      pointer-events: none;
+    }
+    @keyframes ripple-out { to { transform: scale(4); opacity: 0; } }
+
+    .shake { animation: shake 0.28s ease; }
+    @keyframes shake {
+      0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)} 40%{transform:translateX(5px)} 60%{transform:translateX(-3px)} 80%{transform:translateX(3px)}
+    }
+  </style>
+</head>
+<body>
+
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+
+  <div class="calc">
+    <div class="header-row">
+      <span class="calc-name">CALC</span>
+      <div class="glow-dot"></div>
+    </div>
+
+    <div class="display-wrap">
+      <div class="display-expr" id="expr"></div>
+      <div class="display-main" id="display">0</div>
+    </div>
+
+    <div class="btn-grid">
+      <button class="btn btn-fn" data-a="pow">x^y</button>
+      <button class="btn btn-fn" data-a="pct">%</button>
+      <button class="btn btn-fn" data-a="back">⌫</button>
+      <button class="btn btn-clear" data-a="clear">CLR</button>
+
+      <button class="btn btn-num" data-a="7">7</button>
+      <button class="btn btn-num" data-a="8">8</button>
+      <button class="btn btn-num" data-a="9">9</button>
+      <button class="btn btn-op" data-a="÷">÷</button>
+
+      <button class="btn btn-num" data-a="4">4</button>
+      <button class="btn btn-num" data-a="5">5</button>
+      <button class="btn btn-num" data-a="6">6</button>
+      <button class="btn btn-op" data-a="×">×</button>
+
+      <button class="btn btn-num" data-a="1">1</button>
+      <button class="btn btn-num" data-a="2">2</button>
+      <button class="btn btn-num" data-a="3">3</button>
+      <button class="btn btn-op" data-a="−">−</button>
+
+      <button class="btn btn-num btn-zero" data-a="0">0</button>
+      <button class="btn btn-num" data-a=".">.</button>
+      <button class="btn btn-op" data-a="+">+</button>
+
+      <button class="btn btn-fn btn-intdiv" data-a="intdiv">integer ÷  ( \ )</button>
+      <button class="btn btn-eq" data-a="=">=</button>
+    </div>
+  </div>
+
+  <script>
+    const disp = document.getElementById('display');
+    const exprEl = document.getElementById('expr');
+    let cur = '0', op = null, op1 = null, expr = '', fresh = true;
+
+    function setDisp(v) {
+      const s = String(v);
+      disp.className = 'display-main';
+      if (s.length > 13) disp.classList.add('small');
+      else if (s.length > 9) disp.classList.add('med');
+      disp.textContent = s;
+      disp.classList.add('pop');
+      setTimeout(() => disp.classList.remove('pop'), 100);
+    }
+
+    function compute(a, o, b) {
+      switch(o) {
+        case '+': return a + b;
+        case '−': return a - b;
+        case '×': return a * b;
+        case '÷': return b === 0 ? null : a / b;
+        case '^': return Math.pow(a, b);
+        case '\\': return b === 0 ? null : Math.trunc(a / b);
+      }
+    }
+
+    function fmt(n) {
+      if (n === null) return 'Error';
+      return String(parseFloat(n.toPrecision(12)));
+    }
+
+    function addRipple(btn, e) {
+      const r = document.createElement('span');
+      r.className = 'ripple';
+      const rect = btn.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height);
+      r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px`;
+      btn.appendChild(r);
+      setTimeout(() => r.remove(), 420);
+    }
+
+    document.querySelectorAll('.btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        addRipple(btn, e);
+        const a = btn.dataset.a;
+
+        if (a === 'clear') {
+          cur='0';op=null;op1=null;expr='';fresh=true;
+          setDisp('0');exprEl.textContent='';return;
+        }
+        if (a === 'back') {
+          if(fresh)return;
+          cur=cur.length>1?cur.slice(0,-1):'0';
+          setDisp(cur);return;
+        }
+        if (a === 'pct') { cur=String(parseFloat(cur)/100);setDisp(cur);return; }
+        if (a==='pow'||a==='intdiv') {
+          const sym=a==='pow'?'^':'\\';
+          if(op&&!fresh){
+            const res=compute(op1,op,parseFloat(cur));
+            if(res===null){disp.classList.add('shake');setTimeout(()=>disp.classList.remove('shake'),300);setDisp('Error');op=null;op1=null;fresh=true;return;}
+            cur=fmt(res);setDisp(cur);
+          }
+          op1=parseFloat(cur);op=sym;expr=cur+' '+sym;exprEl.textContent=expr;fresh=true;return;
+        }
+        if(['+','−','×','÷'].includes(a)){
+          if(op&&!fresh){
+            const res=compute(op1,op,parseFloat(cur));
+            if(res===null){disp.classList.add('shake');setTimeout(()=>disp.classList.remove('shake'),300);setDisp('Error');op=null;op1=null;fresh=true;return;}
+            cur=fmt(res);setDisp(cur);
+          }
+          op1=parseFloat(cur);op=a;expr=cur+' '+a;exprEl.textContent=expr;fresh=true;return;
+        }
+        if(a==='='){
+          if(!op)return;
+          exprEl.textContent=expr+' '+cur+' =';
+          const res=compute(op1,op,parseFloat(cur));
+          if(res===null){disp.classList.add('shake');setTimeout(()=>disp.classList.remove('shake'),300);setDisp('Error');}
+          else{cur=fmt(res);setDisp(cur);}
+          op=null;op1=null;fresh=true;return;
+        }
+        if(a==='.'){
+          if(fresh){cur='0.';fresh=false;setDisp(cur);return;}
+          if(!cur.includes('.')){cur+='.';setDisp(cur);}return;
+        }
+        if(fresh){cur=a;fresh=false;}
+        else{cur=cur==='0'?a:cur+a;}
+        setDisp(cur);
+      });
+    });
+
+    document.addEventListener('keydown', e => {
+      const map = {
+        '0':'0','1':'1','2':'2','3':'3','4':'4','5':'5','6':'6','7':'7','8':'8','9':'9',
+        '.':'.','Enter':'=','=':'=','+':'+','-':'−','*':'×','/':'÷',
+        'Backspace':'back','Escape':'clear','%':'pct','^':'pow'
+      };
+      const a = map[e.key];
+      if(a) document.querySelector(`[data-a="${a}"]`)?.click();
+    });
+  </script>
+</body>
+</html>
